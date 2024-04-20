@@ -12,6 +12,15 @@ class MainDisplay:
         self.root.title("Image Processing")
         self.root.geometry(str(self.width) + "x" + str(self.height))
         
+        self.render()
+        self.update_clock()
+        self.form_information()
+        self.load_camera()
+        
+        
+        self.update_camera()
+
+    def render(self):
         self.main_label = Label(self.root)
         self.main_label.pack(side='left')
         
@@ -50,13 +59,14 @@ class MainDisplay:
         self.clock_label = Label(self.root, text="", font=("Roboto", 50), fg="blue", bg="white", borderwidth=2,
                                  width=300, relief="groove")
         self.clock_label.pack(side='top', pady=(5, 0))
-        self.update_clock()
 
+    def form_information(self):
         info_text = "Mã Thẻ: 123456\nBiển số xe: 29C-12345\nGiờ vào: 08:00\nGiờ ra: 17:00"
         self.info_label = Label(self.root, text=info_text, font=("Roboto", 20), fg="black", bg="white", borderwidth=2, 
                                 width=300, relief="groove", justify='left',padx=10, pady=10)  
         self.info_label.pack(side='top', pady=(5, 0))  
 
+    def load_camera(self):
         self.cap_0 = cv2.VideoCapture(0)
         self.cap_1 = cv2.VideoCapture(1)
         
@@ -66,8 +76,6 @@ class MainDisplay:
         self.video_frame = None  # Biến để lưu trữ frame từ video
         self.open_video_button = tk.Button(self.root, text='Chọn Video', command=self.open_video, font=("Roboto", 16), fg="white", bg="green", borderwidth=2, relief="raised")
         self.open_video_button.pack(side='top', pady=(5, 0))
-        
-        self.update_camera()
         
     def open_video(self):
         self.selected_video_path = filedialog.askopenfilename()
