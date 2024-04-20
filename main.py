@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import Canvas, Frame, Label, Entry, filedialog, Button
 from PIL import Image, ImageTk
 import time
+from yolo_predictions import Lisence_predict as LS
+import numpy as np
+
 
 class MainDisplay:
     def __init__(self):
@@ -11,6 +14,7 @@ class MainDisplay:
         self.root = tk.Tk()
         self.root.title("Image Processing")
         self.root.geometry(str(self.width) + "x" + str(self.height))
+        self.LS = LS()
         
         self.render()
         self.update_clock()
@@ -120,18 +124,23 @@ class MainDisplay:
         if not self.video_selected:
             ret, frame = self.cap_0.read()
             if ret:
-                img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                img = Image.fromarray(img)
-                img = ImageTk.PhotoImage(image=img)
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                new_img = self.LS.yolo_prediction(frame, self.LS.net)
 
-                self.upper_camera_image.create_image(0, 0, anchor='nw', image=img)
-                self.upper_camera_image.image = img
+                self.upper_camera_image.create_image(0, 0, anchor='nw', image=new_img)
+                self.upper_camera_image.image = new_img
         else:
             if self.video_frame is not None:  # Kiểm tra xem đã có frame từ video hay không
-                img = ImageTk.PhotoImage(image=self.video_frame)
+                pil_image = self.video_frame
 
-                self.upper_camera_image.create_image(0, 0, anchor='nw', image=img)
-                self.upper_camera_image.image = img
+                # Convert PIL Image to a NumPy array
+                frame = np.array(pil_image)
+
+                # Convert color format from RGB to BGR
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                new_img = self.LS.yolo_prediction(frame, self.LS.net)
+                self.upper_camera_image.create_image(0, 0, anchor='nw', image=new_img)
+                self.upper_camera_image.image = new_img
     
     def capture_image_lower(self):
         if not self.video_selected:

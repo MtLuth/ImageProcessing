@@ -7,7 +7,6 @@ import re
 img = cv2.imread('test.jpg')
 
 
-
 class Lisence_predict:
     
     def __init__(self):
@@ -57,7 +56,8 @@ class Lisence_predict:
 
         boxes_np = np.array(boxes).tolist()
         confidences_np = np.array(confidences).tolist()
-        index = cv2.dnn.NMSBoxes(boxes_np,confidences_np,0.25,0.45).flatten()
+        index = np.array(cv2.dnn.NMSBoxes(boxes_np,confidences_np,0.25,0.45)).flatten()
+
         
         return boxes_np, confidences_np, index
 
@@ -82,6 +82,8 @@ class Lisence_predict:
         input_img, detections = self.get_detections(img, net)
         boxes_np, confidences_np, index = self.non_maximum_supression(input_img, detections)
         image = self.drawings(img, boxes_np, confidences_np, index)
+
+        cv2.imshow('r', image)
         return image
 
     def extract_txt(self, image, bbox):
@@ -109,6 +111,7 @@ class Lisence_predict:
 if __name__ == '__main__' :
     license = Lisence_predict()
     img = cv2.imread("N74.jpeg")
+    print(type(img))
     new_img = license.yolo_prediction(img, license.net)
     cv2.waitKey()
     
