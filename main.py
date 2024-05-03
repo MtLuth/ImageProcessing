@@ -125,7 +125,10 @@ class MainDisplay:
             ret, frame = self.cap_0.read()
             if ret:
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
                 new_img = self.LS.yolo_prediction(frame, self.LS.net)
+                new_img = Image.fromarray(new_img)
+                new_img = ImageTk.PhotoImage(image=new_img)
 
                 self.upper_camera_image.create_image(0, 0, anchor='nw', image=new_img)
                 self.upper_camera_image.image = new_img
@@ -135,10 +138,9 @@ class MainDisplay:
 
                 # Convert PIL Image to a NumPy array
                 frame = np.array(pil_image)
-
-                # Convert color format from RGB to BGR
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
                 new_img = self.LS.yolo_prediction(frame, self.LS.net)
+                new_img = Image.fromarray(new_img)
+                new_img = ImageTk.PhotoImage(image=new_img)
                 self.upper_camera_image.create_image(0, 0, anchor='nw', image=new_img)
                 self.upper_camera_image.image = new_img
     
@@ -166,6 +168,7 @@ class MainDisplay:
 
             ret_1, frame_1 = self.cap_1.read()
             if ret_1:
+                frame_0 = cv2.flip(frame_1, 1)
                 img_1 = cv2.cvtColor(frame_1, cv2.COLOR_BGR2RGB)
                 img_1 = Image.fromarray(img_1)
                 img_1 = ImageTk.PhotoImage(image=img_1)

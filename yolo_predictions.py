@@ -3,10 +3,6 @@ import numpy as np
 import os
 import pytesseract as pt
 import re
-
-img = cv2.imread('test.jpg')
-
-
 class Lisence_predict:
     
     def __init__(self):
@@ -83,7 +79,6 @@ class Lisence_predict:
         boxes_np, confidences_np, index = self.non_maximum_supression(input_img, detections)
         image = self.drawings(img, boxes_np, confidences_np, index)
 
-        cv2.imshow('r', image)
         return image
 
     def extract_txt(self, image, bbox):
