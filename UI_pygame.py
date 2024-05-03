@@ -8,6 +8,7 @@ from tkinter import filedialog
 import pygame.camera
 from src.frame import Frame
 from yolo_predictions import Lisence_predict
+from src.form import Form
 
 class Main:
     
@@ -49,6 +50,8 @@ class Main:
 
         self.image_check_in = None
         self.image_check_out = None
+
+        self.form = Form()
 
         pygame.display.set_caption("Image Proccessing - Group 14")
 
@@ -93,6 +96,7 @@ class Main:
         self.check_event()
         self.draw()
         self.display_clock()
+        self.blit_form()
 
         pygame.display.flip()
         if self.cameras:
@@ -114,10 +118,16 @@ class Main:
         clock_surface = font.render(current_time, True, (255, 255, 255))
         total_width_used = 20+self.frame_width*2+10
         distance_x = (self.width - total_width_used)//2
-        clock_rect = clock_surface.get_rect()
-        clock_rect.centerx = distance_x + total_width_used
-        clock_rect.y = 20
-        self.screen.blit(clock_surface, clock_rect)
+        self.clock_rect = clock_surface.get_rect()
+        self.clock_rect.centerx = distance_x + total_width_used
+        self.clock_rect.y = 20
+        self.screen.blit(clock_surface, self.clock_rect)
+
+    def blit_form(self):
+        self.form_rect = self.form.rect
+        self.form_rect.centerx = self.clock_rect.centerx
+        self.form_rect.y = self.clock_rect.y + self.clock_rect.height + 10
+        self.form.blitme(self.screen, self.form_rect)
 
     def open_file_dialog(self):
         root = tk.Tk()

@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import os
 import pytesseract as pt
 import re
 class Lisence_predict:
