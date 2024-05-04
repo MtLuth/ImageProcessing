@@ -1,43 +1,58 @@
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://usename:password@localhost/xulyanh'
-db = SQLAlchemy(app)
-ma = Marshmallow(app)
+class DB_Connection:
+    def __init__(self):
+        self.app = Flask(__name__)
+        self.app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/xulyanh'
+        self.db = SQLAlchemy(self.app)
 
-class License(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True)
-    license = db.Column(db.String(20))
-    gioVao = db.Column(db.String(120))
-    gioRa = db.Column(db.String(120))
-    maThe = db.Column(db.String(120))
+        class Parking(self.db.Model):
+            id = self.db.Column(self.db.Integer, primary_key=True)
+            license = self.db.Column(self.db.String(20))
+            check_in = self.db.Column(self.db.String(120))
+            check_out = self.db.Column(self.db.String(120))
+            cost = self.db.Column(self.db.Integer)
+            series_number = self.db.Column(self.db.String(120))
 
-class LicenseSchema(ma.Schema):
-    class Meta:
-        fields = ('id', 'username', 'license')
+        class Card(self.db.Model):
+            series_number = self.db.Column(self.db.String(120), primary_key=True)
+            status = self.db.Column(self.db.Boolean)
 
-license_schema = LicenseSchema()
-licenses_schema = LicenseSchema(many=True)
+    def create_card(self, series_number, status):
+        new_card = self.Card(series_number=series_number, status=status)
+        self.db.session.add(new_card)
+        self.db.session.commit()
+        print("Card created successfully")
 
+    def create_license(self, license, check_in, check_out, series_number):
+        with self.app.app_context():
+            new_license = self.Parking(license=license, check_in=check_in, check_out=check_out, series_number=series_number)
+            self.db.session.add(new_license)
+            self.db.session.commit()
+            print("License created successfully")
 
-@app.route('/license', methods=['POST'])
-def add_license():
-    data = request.get_json()
-    new_license = License(username=data['username'], license=data['license'], gioVao=data['gioVao'], gioRa=data['gioRa'], maThe=data['maThe'])
-    db.session.add(new_license)
-    db.session.commit()
-    return jsonify({'message': 'License created successfully'}), 201
+    def get_all_licenses(self):
+        with self.app.app_context():
+            all_licenses = self.Parking.query.all()
+            for license in all_licenses:
+                print(f"License ID: {license.id}, License: {license.license}")
 
-
-
-@app.route('/licenses', methods=['GET'])
-def get_licenses():
-    all_licenses = License.query.all()
-    result = licenses_schema.dump(all_licenses)
-    return jsonify(result)
+    def get_licenses_by_series(self, series_number):
+        with self.app.app_context():
+            licenses = self.Parking.query.filter_by(series_number=series_number).all()
+            for license in licenses:
+                print(f"License ID: {license.id}, License: {license.license}")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    db_connection = DB_Connection()
+    with db_connection.app.app_context():
+        db_connection.db.create_all()
+
+        db_connection.create_card("XYZ456", False)
+
+        # Test your functions
+        db_connection.create_license("ABC123", "2024-05-04 08:00:00", "2024-05-04 18:00:00", "XYZ456")
+        db_connection.create_license("DEF456", "2024-05-05 08:00:00", "2024-05-05 18:00:00", "XYZ456")
+        db_connection.get_all_licenses()
+        db_connection.get_licenses_by_series("XYZ456")
