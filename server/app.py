@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-class DB_Connection:
+class DBManager:
     def __init__(self):
         self.app = Flask(__name__)
         self.app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:12345@localhost/xulyanh'
@@ -19,40 +19,47 @@ class DB_Connection:
             series_number = self.db.Column(self.db.String(120), primary_key=True)
             status = self.db.Column(self.db.Boolean)
 
+        self.Parking = Parking
+        self.Card = Card
+
     def create_card(self, series_number, status):
         new_card = self.Card(series_number=series_number, status=status)
         self.db.session.add(new_card)
         self.db.session.commit()
         print("Card created successfully")
 
-    def create_license(self, license, check_in, check_out, series_number):
+    def update_card_status(self, series_number, new_status):
+        card = self.Card.query.filter_by(series_number=series_number).first()
+        if card:
+            card.status = new_status
+            self.db.session.commit()
+            print("Card status updated successfully")
+        else:
+            print("Card not found")
+
+    def create_parking(self, license, check_in, check_out, series_number):
         with self.app.app_context():
             new_license = self.Parking(license=license, check_in=check_in, check_out=check_out, series_number=series_number)
             self.db.session.add(new_license)
             self.db.session.commit()
             print("License created successfully")
 
-    def get_all_licenses(self):
+    def get_all_parkings(self):
         with self.app.app_context():
-            all_licenses = self.Parking.query.all()
-            for license in all_licenses:
-                print(f"License ID: {license.id}, License: {license.license}")
+            all_parkings = self.Parking.query.all()
+            for parking in all_parkings:
+                print(f"Parking ID: {parking.id}, License: {parking.license}")
 
-    def get_licenses_by_series(self, series_number):
+    def get_parkings_by_series(self, series_number):
         with self.app.app_context():
-            licenses = self.Parking.query.filter_by(series_number=series_number).all()
-            for license in licenses:
-                print(f"License ID: {license.id}, License: {license.license}")
+            parkings = self.Parking.query.filter_by(series_number=series_number).all()
+            for parking in parkings:
+                print(f"Parking ID: {parking.id}, License: {parking.license}")
 
 if __name__ == '__main__':
-    db_connection = DB_Connection()
-    with db_connection.app.app_context():
-        db_connection.db.create_all()
-
-        db_connection.create_card("XYZ456", False)
+    db_manager = DBManager()
+    with db_manager.app.app_context():
+        db_manager.db.create_all()
 
         # Test your functions
-        db_connection.create_license("ABC123", "2024-05-04 08:00:00", "2024-05-04 18:00:00", "XYZ456")
-        db_connection.create_license("DEF456", "2024-05-05 08:00:00", "2024-05-05 18:00:00", "XYZ456")
-        db_connection.get_all_licenses()
-        db_connection.get_licenses_by_series("XYZ456")
+        db_manager.get_all_parkings()
