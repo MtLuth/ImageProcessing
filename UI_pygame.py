@@ -1,14 +1,18 @@
 import pygame
 import sys
 import time
+import datetime
 import cv2
 import tkinter as tk
 from tkinter import filedialog
+from tkinter import messagebox
 
 import pygame.camera
 from src.frame import Frame
 from yolo_predictions import Lisence_predict
 from src.form import Form
+from src.card import CardParking
+from src.window_select_card import Window_Select_Card
 
 class Main:
     
@@ -16,7 +20,6 @@ class Main:
         pygame.init()
         pygame.camera.init()
 
-        self.license_predict = Lisence_predict()
         self.image_from_file = None
 
         self.width = 1280
@@ -52,6 +55,7 @@ class Main:
         self.image_check_out = None
 
         self.form = Form()
+        self.new_window = None
 
         pygame.display.set_caption("Image Proccessing - Group 14")
 
@@ -59,16 +63,35 @@ class Main:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos_x, pos_y = pygame.mouse.get_pos()
+                if (self.new_window != None and self.new_window.is_run == True):
+                    x = pos_x - self.new_window.rect.x
+                    y = pos_y - self.new_window.rect.y
+                    self.new_window.check_click(x, y)
+                    if (self.new_window.ticket_choosed != None and self.new_window.status == False):
+                        self.check_in() 
+                    elif (self.new_window.ticket_choosed != None):
+                        self.check_out()
+                    self.new_window.click_outside(pos_x, pos_y)
             if event.type == pygame.KEYDOWN:
                 self.check_key_down(event)
             if event.type == self.timer_event:
-                self.display_clock
+                self.display_clock()
+            if event.type == pygame.USEREVENT:
+                if self.image_check_in != None or self.image_check_out != None:
+                    self.image_check_in = None
+                    self.image_check_out = None
+                    self.frame2 = Frame(self.frame_width, self.frame_height, self.frame_color, self.frame_alpha)
+                    self.frame3 = Frame(self.frame_width, self.frame_height, self.frame_color, self.frame_alpha)
+            
 
     def check_key_down(self, event):
         if event.key == pygame.K_q:
             sys.exit()
         if event.key == pygame.K_i:
-            self.check_in()        
+            self.new_window = Window_Select_Card(self, False)       
+        
         if event.key == pygame.K_l:
             self.webcam.stop()
             self.cameras.clear()
@@ -79,25 +102,28 @@ class Main:
             self.webcam.start()
             self.cameras.append(self.webcam)
         if event.key == pygame.K_o:
-            self.check_out()
+            self.new_window = Window_Select_Card(self, True)
+        
     
     def draw(self):
         self.bg_img = pygame.transform.scale(self.bg_img, (self.width, self.height))
         self.screen.blit(self.bg_img, (0,0))
         self.screen.blit(self.surface, (0,0))
-    
         self.frame1.draw(self.screen, 20, 20)
         self.frame2.draw(self.screen, 20+10+self.frame_width, 20)
         self.frame3.draw(self.screen, 20, 20+10+self.frame_height)
         self.frame4.draw(self.screen, 20+10+self.frame_width, 20+10+self.frame_height)
-                
 
-    def update_screen(self):
-        self.check_event()
-        self.draw()
         self.display_clock()
         self.blit_form()
 
+        if (self.new_window != None):
+            if (self.new_window.is_run == True):
+                self.new_window.blitme()
+            
+    def update_screen(self):
+        self.draw()
+        
         pygame.display.flip()
         if self.cameras:
             self.frame1.blit(self.img_webcam, self.img_webcam_width, self.img_webcam_height)
@@ -150,25 +176,8 @@ class Main:
         return img
 
     def check_in(self):
-
-        # Xử lý các sự kiện ở đây
-
         #Load lên giao diện ảnh chụp
-        if self.cameras:
-                image_np = pygame.surfarray.array3d(self.img_webcam)
-        elif self.image_from_file is not None:
-            image_np = pygame.surfarray.array3d(self.image_from_file)
-        
-        image_np = self.convert_to_cv2(image_np)
-
-        self.image_check_in = self.license_predict.yolo_prediction(image_np, self.license_predict.net)
-        self.image_check_in = self.convert_cv2_to_surface(self.image_check_in)
-
-    def check_out(self):
-        #Xử lý các sự kiện ở đây
-
-
-        #Load lên giao diện ảnh chụp
+        self.license_predict = Lisence_predict()
         if self.cameras:
             image_np = pygame.surfarray.array3d(self.img_webcam)
         elif self.image_from_file is not None:
@@ -176,11 +185,84 @@ class Main:
         
         image_np = self.convert_to_cv2(image_np)
 
-        self.image_check_out = self.license_predict.yolo_prediction(image_np, self.license_predict.net)
-        self.image_check_out = self.convert_cv2_to_surface(self.image_check_out)
+        img_check_in = self.license_predict.yolo_prediction(image_np, self.license_predict.net)
+        img_check_in = self.convert_cv2_to_surface(img_check_in)
+        if self.license_predict.point >=80:
+            if self.cameras:
+                image_np = pygame.surfarray.array3d(self.img_webcam)
+            elif self.image_from_file is not None:
+                image_np = pygame.surfarray.array3d(self.image_from_file)
+            
+            image_np = self.convert_to_cv2(image_np)
+
+            self.image_check_in = self.license_predict.yolo_prediction(image_np, self.license_predict.net)
+            self.image_check_in = self.convert_cv2_to_surface(self.image_check_in)
+            license = self.license_predict.license
+            check_in_time = time.strftime('%H:%M:%S')
+            series_number = self.new_window.ticket_choosed
+            self.form = Form()
+            self.form.lines[0] = "Mã thẻ: "+series_number
+            if license != None:
+                self.form.lines[1] = "Biển số: "+license
+            self.form.lines[2] = "Giờ vào: "+check_in_time
+
+            if (self.new_window.status):
+                self.new_window.update_card_status(self.new_window.ticket_choosed, False)
+            else:
+                self.new_window.update_card_status(self.new_window.ticket_choosed, True)
+            date = datetime.date.today()
+            date = date.strftime("%Y-%m-%d")
+            check_in_time = time.strftime("%H-%M")
+            check_in_dir = "./ImageCheckIn/"
+            pygame.image.save(self.image_check_in, check_in_dir+"-"+check_in_time+"-"+license+".png")
+            pygame.time.set_timer(pygame.USEREVENT, 3000)
+        else:
+            self.show_warning()
+
+    def check_out(self):
+        self.license_predict = Lisence_predict()
+        if self.cameras:
+            image_np = pygame.surfarray.array3d(self.img_webcam)
+        elif self.image_from_file is not None:
+            image_np = pygame.surfarray.array3d(self.image_from_file)
+        
+        image_np = self.convert_to_cv2(image_np)
+
+        image_check_out = self.license_predict.yolo_prediction(image_np, self.license_predict.net)
+        image_check_out = self.convert_cv2_to_surface(image_check_out)
+        if self.license_predict.point >= 80:
+            self.image_check_out = image_check_out
+            license = self.license_predict.license
+            check_out_time = time.strftime('%H:%M:%S')
+            series_number = self.new_window.ticket_choosed
+            self.form = Form()
+            self.form.lines[0] = "Mã thẻ: "+series_number
+            self.form.lines[3] = "Giờ ra: "+check_out_time
+            self.form.lines[1] = "Biển số: "+license 
+            if (self.new_window.status):
+                    self.new_window.update_card_status(self.new_window.ticket_choosed, False)
+            else:
+                self.new_window.update_card_status(self.new_window.ticket_choosed, True)
+            date = datetime.date.today()
+            date = date.strftime("%Y-%m-%d")
+            check_out_time = time.strftime("%H-%M")
+            check_out_dir = "./ImageCheckOut/"
+            pygame.image.save(self.image_check_in, check_out_dir+"-"+check_out_time+"-"+license+".png")
+            pygame.time.set_timer(pygame.USEREVENT, 3000)
+        else:
+            self.show_warning()
+
+
+    def show_warning(self):
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showerror("Error", "Can't detect license plate!") 
+        root.destroy
+
 
     def run_app(self):
         while True:
+            self.check_event()
             self.update_screen()
 
 if __name__ == "__main__":

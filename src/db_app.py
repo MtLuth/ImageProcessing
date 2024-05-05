@@ -23,19 +23,37 @@ class DBManager:
         self.Card = Card
 
     def create_card(self, series_number, status):
-        new_card = self.Card(series_number=series_number, status=status)
-        self.db.session.add(new_card)
-        self.db.session.commit()
-        print("Card created successfully")
+        with self.app.app_context():
+            new_card = self.Card(series_number=series_number, status=status)
+            self.db.session.add(new_card)
+            self.db.session.commit()
+            print("Card created successfully")
+
+    def get_all_card(self):
+        cards = []
+        with self.app.app_context():
+            all_cards = self.Card.query.all()
+            for card in all_cards:
+                cards.append((card.series_number, card.status))
+        return cards
+    
+    def get_card_by_status(self, status):
+        cards = []
+        with self.app.app_context():
+            all_cards = self.Card.query.filter_by(status=status)
+            for card in all_cards:
+                cards.append((card.series_number, card.status))
+        return cards
 
     def update_card_status(self, series_number, new_status):
-        card = self.Card.query.filter_by(series_number=series_number).first()
-        if card:
-            card.status = new_status
-            self.db.session.commit()
-            print("Card status updated successfully")
-        else:
-            print("Card not found")
+        with self.app.app_context():
+            card = self.Card.query.filter_by(series_number=series_number).first()
+            if card:
+                card.status = new_status
+                self.db.session.commit()
+                print("Card status updated successfully")
+            else:
+                print("Card not found")
 
     def create_parking(self, license, check_in, check_out, series_number):
         with self.app.app_context():
@@ -47,8 +65,7 @@ class DBManager:
     def get_all_parkings(self):
         with self.app.app_context():
             all_parkings = self.Parking.query.all()
-            for parking in all_parkings:
-                print(f"Parking ID: {parking.id}, License: {parking.license}")
+
 
     def get_parkings_by_series(self, series_number):
         with self.app.app_context():

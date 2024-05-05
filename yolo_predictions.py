@@ -8,6 +8,8 @@ class Lisence_predict:
         self.net = cv2.dnn.readNetFromONNX("./Model2/weights/best.onnx")
         self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+        self.point = 0
+        self.license = None
 
     def get_detections(self, img, net):
         image = img.copy()
@@ -60,16 +62,12 @@ class Lisence_predict:
         for i in index:
             x,y,w,h =  boxes_np[i]
             bb_conf = confidences_np[i]
-            conf_text = 'plate: {:.0f}%'.format(bb_conf*100)
+            self.point = bb_conf*100
             
             txt = self.extract_txt(image, boxes_np[i])
+            self.license = txt
     
             cv2.rectangle(image,(x,y),(x+w,y+h),(0,0,255),2)
-            cv2.rectangle(image,(x,y-30),(x+w,y),(0,0,255),-1)
-            cv2.rectangle(image,(x,y+h),(x+w,y+h+30),(0,0,0))
-
-            cv2.putText(image,conf_text,(x,y-10),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,255),1)
-            cv2.putText(image,txt,(x,y+h+27),cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,255,0),1)
 
         return image
 
